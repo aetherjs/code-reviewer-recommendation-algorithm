@@ -23,7 +23,7 @@ Python requirements for PyGit2:
 
 # Usage 
 
-`review_suggestion.py [-h] repo_path hashes_list [hashes_list ...]`
+`$ review_suggestion.py [-h] repo_path hashes_list [hashes_list ...]`
 
 positional arguments: 
 * repo_path Path to local github repository, must not be a path to the repositorys working dir and therefore must end with /.git 
@@ -31,4 +31,4 @@ positional arguments:
 
 optional argument: -h, --help show this help message and exit
 
-**Example**: `python3 review_suggestion.py Path/To/Working/Repository/.git 4866b1330bc7c77c0ed0e050e6b99efdeb026448 7b7c1a0135580251990c7866aed39202f9928b1f`
+**Example**: `$ python3 review_suggestion.py Path/To/Working/Repository/.git 4866b1330bc7c77c0ed0e050e6b99efdeb026448 7b7c1a0135580251990c7866aed39202f9928b1f`
