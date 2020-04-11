@@ -1,5 +1,6 @@
 import pygit2
 import argparse
+from pygit2 import GIT_SORT_TOPOLOGICAL, GIT_SORT_REVERSE
 
 
 def reccomend_reviewer(path, review_commit_hashes):
@@ -13,25 +14,35 @@ def reccomend_reviewer(path, review_commit_hashes):
     # Firstly let's identify the files that have been changed in the review commits
     for hash in review_commit_hashes:
         commit = repo.get(hash)
-        for obj in commit.tree:
-            if obj.type == pygit2.GIT_OBJ_BLOB:
-                changed_files.add(obj.name)
+        current_diff = commit.tree.diff_to_tree(commit.parents[0].tree)
+        for patch in current_diff:
+            filename = patch.delta.old_file.path
+            changed_files.add(filename) 
+
+    print('Changed files: ')
+    print(changed_files)
 
     # Now changed_files set contains names of all the changed files, iterate through all other commits 
     # and compare them to the review commits, calculate similarity scores for authors
-    for commit in repo.walk(repo.head.target, pygit2.GIT_SORT_TOPOLOGICAL | pygit2.GIT_SORT_REVERSE):
+    for commit in repo.walk(repo.head.target, GIT_SORT_TOPOLOGICAL):
+        if not commit.parents:
+            print('No commit parents for commit: ', commit.id.__str__(), ', assuming no changed files')
+            continue
         past_commits_changed_files = set()
         if (commit.id.__str__() not in review_commit_hashes):
-            for obj in commit.tree:
-                if obj.type == pygit2.GIT_OBJ_BLOB:
-                    if obj.name in changed_files:
-                        past_commits_changed_files.add(obj.name)
+            current_diff = commit.tree.diff_to_tree(commit.parents[0].tree)
+            for patch in current_diff:
+                
+                filename = patch.delta.old_file.path
+                past_commits_changed_files.add(filename)
             commit_similarity_score = jaccard_index(changed_files, past_commits_changed_files)
             if commit.author.email != review_author:  
                 if commit.author.email in authors:
                     authors[commit.author.email] += commit_similarity_score
                 else:
                     authors[commit.author.email] = commit_similarity_score
+                print('Commit No: ', commit.id.__str__(), '; Similarity score of ', commit_similarity_score, ' added to author: ', commit.author.email)
+
 
     # Lastly sort authors by their accumulated relevance score, and output top 5
     suggested_reviewers = {k: v for k, v in sorted(authors.items(), key=lambda item: item[1], reverse=True)}
